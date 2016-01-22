@@ -524,7 +524,7 @@ struct PointMatcher
 		T getPointUsedRatio() const;
 		T getWeightedPointUsedRatio() const;
 		ErrorElements getErrorElements() const; //TODO: ensure that is return a usable value
-        virtual T getMean() const;
+		virtual T getMean() const;
 		virtual T getOverlap() const;
 		virtual Matrix getCovariance() const;
 		
@@ -654,15 +654,15 @@ struct PointMatcher
 		
 		void cleanup();
 		
-        virtual void loadAdditionalYAMLContent(PointMatcherSupport::YAML::Node& doc);
+		virtual void loadAdditionalYAMLContent(PointMatcherSupport::YAML::Node& doc);
 		
 		//! Instantiate modules if their names are in the YAML file
 		template<typename R>
-        const std::string& createModulesFromRegistrar(const std::string& regName, const PointMatcherSupport::YAML::Node& doc, const R& registrar, PointMatcherSupport::SharedPtrVector<typename R::TargetType>& modules);
+		const std::string& createModulesFromRegistrar(const std::string& regName, const PointMatcherSupport::YAML::Node& doc, const R& registrar, PointMatcherSupport::SharedPtrVector<typename R::TargetType>& modules);
 		
 		//! Instantiate a module if its name is in the YAML file
 		template<typename R>
-        const std::string& createModuleFromRegistrar(const std::string& regName, const PointMatcherSupport::YAML::Node& doc, const R& registrar, boost::shared_ptr<typename R::TargetType>& module);
+		const std::string& createModuleFromRegistrar(const std::string& regName, const PointMatcherSupport::YAML::Node& doc, const R& registrar, boost::shared_ptr<typename R::TargetType>& module);
 		
 		/*template<typename R>
 		typename R::TargetType* createModuleFromRegistrar(const PointMatcherSupport::YAML::Node& module, const R& registrar);*/
