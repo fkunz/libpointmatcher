@@ -107,10 +107,35 @@ typename PointMatcher<T>::TransformationParameters ErrorMinimizersImpl<T>::Point
 }
 
 template<typename T>
+T ErrorMinimizersImpl<T>::PointToPointErrorMinimizer::getMean() const
+{
+	const int nbPoints = this->lastErrorElements.reading.features.cols();
+	const int dim = this->lastErrorElements.reading.features.rows();
+	if(nbPoints == 0)
+	{
+		throw std::runtime_error("Error, last error element empty. Error minimizer needs to be called at least once before using this method.");
+	}
+
+	if (!this->lastErrorElements.reading.descriptorExists("simpleSensorNoise") ||
+			!this->lastErrorElements.reading.descriptorExists("normals"))
+	{
+		LOG_INFO_STREAM("PointToPlaneErrorMinimizer - warning, no sensor noise or normals found. Using best estimate given outlier rejection instead.");
+		return this->weightedPointUsedRatio;
+	}
+
+//	const BOOST_AUTO(noises, this->lastErrorElements.reading.getDescriptorViewByName("simpleSensorNoise"));
+//	const BOOST_AUTO(normals, this->lastErrorElements.reading.getDescriptorViewByName("normals"));
+
+
+	const Matrix delta = (this->lastErrorElements.reading.features.topRows(dim-1) - this->lastErrorElements.reference.features.topRows(dim-1));
+	return delta.colwise().norm().sum()/nbPoints;
+}
+
+template<typename T>
 T ErrorMinimizersImpl<T>::PointToPointErrorMinimizer::getOverlap() const
 {
 	//NOTE: computing overlap of 2 point clouds can be complicated due to
-	// the sparse nature of the representation. Here is only an estimate 
+	// the sparse nature of the representation. Here is only an estimate
 	// of the true overlap.
 	const int nbPoints = this->lastErrorElements.reading.features.cols();
 	const int dim = this->lastErrorElements.reading.features.rows();
@@ -194,7 +219,7 @@ typename PointMatcher<T>::TransformationParameters ErrorMinimizersImpl<T>::Point
 	// F  = [cross, normals]
 	Matrix wF(normalRef.rows()+ cross.rows(), normalRef.cols());
 	Matrix F(normalRef.rows()+ cross.rows(), normalRef.cols());
-	
+
 	for(int i=0; i < cross.rows(); i++)
 	{
 		wF.row(i) = mPts.weights.array() * cross.row(i).array();
@@ -202,7 +227,7 @@ typename PointMatcher<T>::TransformationParameters ErrorMinimizersImpl<T>::Point
 	}
 	for(int i=0; i < normalRef.rows(); i++)
 	{
-    	        wF.row(i + cross.rows()) = mPts.weights.array() * normalRef.row(i).array();
+		wF.row(i + cross.rows()) = mPts.weights.array() * normalRef.row(i).array();
 		F.row(i + cross.rows()) = normalRef.row(i);
 	}
 
@@ -218,7 +243,7 @@ typename PointMatcher<T>::TransformationParameters ErrorMinimizersImpl<T>::Point
 
 	// dot product of dot = dot(deltas, normals)
 	Matrix dotProd = Matrix::Zero(1, normalRef.cols());
-	
+
 	for(int i=0; i<normalRef.rows(); i++)
 	{
 		dotProd += (deltas.row(i).array() * normalRef.row(i).array()).matrix();
@@ -230,7 +255,7 @@ typename PointMatcher<T>::TransformationParameters ErrorMinimizersImpl<T>::Point
 	// Cholesky decomposition
 	Vector x(A.rows());
 	x = A.llt().solve(b);
-	
+
 	// Transform parameters to matrix
 	Matrix mOut;
 	if(dim == 4 && !force2D)
@@ -252,13 +277,13 @@ typename PointMatcher<T>::TransformationParameters ErrorMinimizersImpl<T>::Point
 		transform.translation() = x.segment(3, 3);
 		mOut = transform.matrix();
 
-		if (mOut != mOut) 
+		if (mOut != mOut)
 		{
 			// Degenerate situation. This can happen when the source and reading clouds
 			// are identical, and then b and x above are 0, and the rotation matrix cannot
 			// be determined, it comes out full of NaNs. The correct rotation is the identity.
 			mOut.block(0, 0, dim-1, dim-1) = Matrix::Identity(dim-1, dim-1);
-		}	
+		}
 	}
 	else
 	{
@@ -277,7 +302,32 @@ typename PointMatcher<T>::TransformationParameters ErrorMinimizersImpl<T>::Point
 			mOut = transform.matrix();
 		}
 	}
-	return mOut; 
+	return mOut;
+}
+
+template<typename T>
+T ErrorMinimizersImpl<T>::PointToPlaneErrorMinimizer::getMean() const
+{
+	const int nbPoints = this->lastErrorElements.reading.features.cols();
+	const int dim = this->lastErrorElements.reading.features.rows();
+	if(nbPoints == 0)
+	{
+		throw std::runtime_error("Error, last error element empty. Error minimizer needs to be called at least once before using this method.");
+	}
+
+	if (!this->lastErrorElements.reading.descriptorExists("simpleSensorNoise") ||
+		!this->lastErrorElements.reading.descriptorExists("normals"))
+	{
+		LOG_INFO_STREAM("PointToPlaneErrorMinimizer - warning, no sensor noise or normals found. Using best estimate given outlier rejection instead.");
+		return this->weightedPointUsedRatio;
+	}
+
+//	const BOOST_AUTO(noises, this->lastErrorElements.reading.getDescriptorViewByName("simpleSensorNoise"));
+//	const BOOST_AUTO(normals, this->lastErrorElements.reading.getDescriptorViewByName("normals"));
+
+
+	const Matrix delta = (this->lastErrorElements.reading.features.topRows(dim-1) - this->lastErrorElements.reference.features.topRows(dim-1));
+	return delta.colwise().norm().sum()/nbPoints;
 }
 
 template<typename T>
@@ -291,15 +341,15 @@ T ErrorMinimizersImpl<T>::PointToPlaneErrorMinimizer::getOverlap() const
 	}
 	
 	if (!this->lastErrorElements.reading.descriptorExists("simpleSensorNoise") ||
-		!this->lastErrorElements.reading.descriptorExists("normals"))
+			!this->lastErrorElements.reading.descriptorExists("normals"))
 	{
 		LOG_INFO_STREAM("PointToPlaneErrorMinimizer - warning, no sensor noise or normals found. Using best estimate given outlier rejection instead.");
 		return this->weightedPointUsedRatio;
 	}
 
-	const BOOST_AUTO(noises, this->lastErrorElements.reading.getDescriptorViewByName("simpleSensorNoise"));
-	const BOOST_AUTO(normals, this->lastErrorElements.reading.getDescriptorViewByName("normals"));
-	
+		const BOOST_AUTO(noises, this->lastErrorElements.reading.getDescriptorViewByName("simpleSensorNoise"));
+		const BOOST_AUTO(normals, this->lastErrorElements.reading.getDescriptorViewByName("normals"));
+
 
 	const Matrix delta = (this->lastErrorElements.reading.features.topRows(dim-1) - this->lastErrorElements.reference.features.topRows(dim-1));
 	const T mean = delta.colwise().norm().sum()/nbPoints;
@@ -457,6 +507,31 @@ ErrorMinimizersImpl<T>::PointToPointWithCovErrorMinimizer::estimateCovariance(co
 }
 
 template<typename T>
+T ErrorMinimizersImpl<T>::PointToPointWithCovErrorMinimizer::getMean() const
+{
+	const int nbPoints = this->lastErrorElements.reading.features.cols();
+	const int dim = this->lastErrorElements.reading.features.rows();
+	if(nbPoints == 0)
+	{
+		throw std::runtime_error("Error, last error element empty. Error minimizer needs to be called at least once before using this method.");
+	}
+
+	if (!this->lastErrorElements.reading.descriptorExists("simpleSensorNoise") ||
+			!this->lastErrorElements.reading.descriptorExists("normals"))
+	{
+		LOG_INFO_STREAM("PointToPlaneErrorMinimizer - warning, no sensor noise or normals found. Using best estimate given outlier rejection instead.");
+		return this->weightedPointUsedRatio;
+	}
+
+//	const BOOST_AUTO(noises, this->lastErrorElements.reading.getDescriptorViewByName("simpleSensorNoise"));
+//	const BOOST_AUTO(normals, this->lastErrorElements.reading.getDescriptorViewByName("normals"));
+
+
+	const Matrix delta = (this->lastErrorElements.reading.features.topRows(dim-1) - this->lastErrorElements.reference.features.topRows(dim-1));
+	return delta.colwise().norm().sum()/nbPoints;
+}
+
+template<typename T>
 T ErrorMinimizersImpl<T>::PointToPointWithCovErrorMinimizer::getOverlap() const
 {
 	const int nbPoints = this->lastErrorElements.reading.features.cols();
@@ -487,7 +562,7 @@ T ErrorMinimizersImpl<T>::PointToPointWithCovErrorMinimizer::getOverlap() const
 template<typename T>
 typename ErrorMinimizersImpl<T>::Matrix ErrorMinimizersImpl<T>::PointToPointWithCovErrorMinimizer::getCovariance() const
 {
-  return covMatrix;
+	return covMatrix;
 }
 
 template struct ErrorMinimizersImpl<float>::PointToPointWithCovErrorMinimizer;
@@ -551,7 +626,7 @@ typename PointMatcher<T>::TransformationParameters ErrorMinimizersImpl<T>::Point
 	}
 	for(int i=0; i < normalRef.rows(); i++)
 	{
-       	        wF.row(i + cross.rows()) = mPts.weights.array() * normalRef.row(i).array();
+		wF.row(i + cross.rows()) = mPts.weights.array() * normalRef.row(i).array();
 		F.row(i + cross.rows()) = normalRef.row(i);
 	}
 
@@ -620,7 +695,7 @@ typename PointMatcher<T>::TransformationParameters ErrorMinimizersImpl<T>::Point
 
 	this->covMatrix = this->estimateCovariance(filteredReading, filteredReference, matches, outlierWeights, mOut);
 
-	return mOut; 
+	return mOut;
 }
 
 template<typename T>
@@ -714,7 +789,30 @@ ErrorMinimizersImpl<T>::PointToPlaneWithCovErrorMinimizer::estimateCovariance(co
 	return (sensorStdDev * sensorStdDev) * covariance;
 }
 
+template<typename T>
+T ErrorMinimizersImpl<T>::PointToPlaneWithCovErrorMinimizer::getMean() const
+{
+	const int nbPoints = this->lastErrorElements.reading.features.cols();
+	const int dim = this->lastErrorElements.reading.features.rows();
+	if(nbPoints == 0)
+	{
+		throw std::runtime_error("Error, last error element empty. Error minimizer needs to be called at least once before using this method.");
+	}
 
+	if (!this->lastErrorElements.reading.descriptorExists("simpleSensorNoise") ||
+			!this->lastErrorElements.reading.descriptorExists("normals"))
+	{
+		LOG_INFO_STREAM("PointToPlaneErrorMinimizer - warning, no sensor noise or normals found. Using best estimate given outlier rejection instead.");
+		return this->weightedPointUsedRatio;
+	}
+
+//	const BOOST_AUTO(noises, this->lastErrorElements.reading.getDescriptorViewByName("simpleSensorNoise"));
+//	const BOOST_AUTO(normals, this->lastErrorElements.reading.getDescriptorViewByName("normals"));
+
+
+	const Matrix delta = (this->lastErrorElements.reading.features.topRows(dim-1) - this->lastErrorElements.reference.features.topRows(dim-1));
+	return delta.colwise().norm().sum()/nbPoints;
+}
 
 template<typename T>
 T ErrorMinimizersImpl<T>::PointToPlaneWithCovErrorMinimizer::getOverlap() const
@@ -754,7 +852,7 @@ T ErrorMinimizersImpl<T>::PointToPlaneWithCovErrorMinimizer::getOverlap() const
 template<typename T>
 typename ErrorMinimizersImpl<T>::Matrix ErrorMinimizersImpl<T>::PointToPlaneWithCovErrorMinimizer::getCovariance() const
 {
-  return covMatrix;
+	return covMatrix;
 }
 
 template struct ErrorMinimizersImpl<float>::PointToPlaneWithCovErrorMinimizer;

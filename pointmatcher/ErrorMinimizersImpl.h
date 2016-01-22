@@ -73,6 +73,7 @@ struct ErrorMinimizersImpl
 		}
 		
 		virtual TransformationParameters compute(const DataPoints& filteredReading, const DataPoints& filteredReference, const OutlierWeights& outlierWeights, const Matches& matches);
+		virtual T getMean() const;
 		virtual T getOverlap() const;
 	};
 
@@ -94,6 +95,7 @@ struct ErrorMinimizersImpl
 		
 		PointToPlaneErrorMinimizer(const Parameters& params = Parameters());
 		virtual TransformationParameters compute(const DataPoints& filteredReading, const DataPoints& filteredReference, const OutlierWeights& outlierWeights, const Matches& matches);
+		virtual T getMean() const;
 		virtual T getOverlap() const;
 	};
 
@@ -111,11 +113,12 @@ struct ErrorMinimizersImpl
 			;
 		}
 
-	    const T sensorStdDev;
+		const T sensorStdDev;
 		Matrix covMatrix;
 
 		PointToPointWithCovErrorMinimizer(const Parameters& params = Parameters());
 		virtual TransformationParameters compute(const DataPoints& filteredReading, const DataPoints& filteredReference, const OutlierWeights& outlierWeights, const Matches& matches);
+		virtual T getMean() const;
 		virtual T getOverlap() const;
 		virtual Matrix getCovariance() const;
 		Matrix estimateCovariance(const DataPoints& reading, const DataPoints& reference, const Matches& matches, const OutlierWeights& outlierWeights, const TransformationParameters& transformation);
@@ -137,11 +140,12 @@ struct ErrorMinimizersImpl
 		}
 
 		const bool force2D;
-	    const T sensorStdDev;
+		const T sensorStdDev;
 		Matrix covMatrix;
 		
 		PointToPlaneWithCovErrorMinimizer(const Parameters& params = Parameters());
 		virtual TransformationParameters compute(const DataPoints& filteredReading, const DataPoints& filteredReference, const OutlierWeights& outlierWeights, const Matches& matches);
+		virtual T getMean() const;
 		virtual T getOverlap() const;
 		virtual Matrix getCovariance() const;
 		Matrix estimateCovariance(const DataPoints& reading, const DataPoints& reference, const Matches& matches, const OutlierWeights& outlierWeights, const TransformationParameters& transformation);

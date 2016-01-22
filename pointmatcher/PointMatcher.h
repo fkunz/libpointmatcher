@@ -524,6 +524,7 @@ struct PointMatcher
 		T getPointUsedRatio() const;
 		T getWeightedPointUsedRatio() const;
 		ErrorElements getErrorElements() const; //TODO: ensure that is return a usable value
+        virtual T getMean() const;
 		virtual T getOverlap() const;
 		virtual Matrix getCovariance() const;
 		

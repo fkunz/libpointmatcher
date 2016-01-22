@@ -92,6 +92,14 @@ T PointMatcher<T>::ErrorMinimizer::getWeightedPointUsedRatio() const
 
 //! If not redefined by child class, return the ratio of how many points were used (with weight) for error minimization
 template<typename T>
+T PointMatcher<T>::ErrorMinimizer::getMean() const
+{
+	LOG_INFO_STREAM("ErrorMinimizer - warning, no specific method to compute mean error was provided for the ErrorMinimizer used.");
+	return weightedPointUsedRatio;
+}
+
+//! If not redefined by child class, return the ratio of how many points were used (with weight) for error minimization
+template<typename T>
 T PointMatcher<T>::ErrorMinimizer::getOverlap() const
 {
 	LOG_INFO_STREAM("ErrorMinimizer - warning, no specific method to compute overlap was provided for the ErrorMinimizer used.");
